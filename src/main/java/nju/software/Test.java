@@ -23,15 +23,15 @@ public class Test {
     }
 
     public static DB getDB() throws UnknownHostException {
-        MongoClient mongoClient = new MongoClient("192.168.172.1", 27017);
+        MongoClient mongoClient = new MongoClient("192.168.1.212", 27017);
         DB db = mongoClient.getDB("shop");
         return db;
     }
 
     public void saveShopInfo() {
-        File shop_info = new File("E://��һ/dataset/shop_info.txt");
+        File shop_info = new File("/home/hadoop/shop_info.txt");
         try {
-            List<String> lines = FileUtil.getStringFromFile(shop_info, "utf-8");
+            List<String> lines = FileUtil.getStringFromFile(shop_info, "utf-8",-1);
             DB db = Test.getDB();
             DBCollection coll = db.getCollection("shop_info");
             List<String> keys = new ArrayList<String>() ;
@@ -59,60 +59,57 @@ public class Test {
             }
         }catch (ArrayIndexOutOfBoundsException e){
             e.printStackTrace();
-            System.out.println("Խ��");
+            System.out.println("OutOfBounds");
             System.exit(0);
         } catch (IOException e) {
-            System.out.println("�ļ�shop_info.txt��ȡʧ��");
+            System.out.println("IOException");
             e.printStackTrace();
             System.exit(0);
         }
     }
     public void saveUserPay() {
         System.out.println("1");
-        File shop_info = new File("E://dataset/user_pay.txt");
+        File shop_info = new File("/home/hadoop/user_pay.txt");
         try {
-            while(!FileUtil.isBreak) {
-                List<String> lines = FileUtil.getStringFromFile(shop_info, "utf-8");
-                DB db = Test.getDB();
-                DBCollection coll = db.getCollection("user_pay");
-                List<String> keys = new ArrayList<String>();
-                keys.add("user_id");
-                keys.add("shop_id");
-                keys.add("time_stamp");
-                int i = 0;
-                System.out.println("3");
-                for (String line : lines) {
-                    i = 0;
-                    String[] words = line.split(",");
-                    BasicDBObject doc = new BasicDBObject();
-                    for (String word : words) {
-                        doc.append(keys.get(i++), word);
-                    }
-                    coll.insert(doc);
-                    doc = null;
+            List<String> lines = FileUtil.getStringFromFile(shop_info, "utf-8",58);
+            DB db = Test.getDB();
+            DBCollection coll = db.getCollection("user_pay");
+            List<String> keys = new ArrayList<String>();
+            keys.add("user_id");
+            keys.add("shop_id");
+    //                keys.add("time_stamp");
+            int i = 0;
+            System.out.println("3");
+            for (String line : lines) {
+                i = 0;
+                String[] words = line.split(",");
+                BasicDBObject doc = new BasicDBObject();
+                for(String key:keys){
+                    doc.append(key,words[i++]) ;
                 }
+                coll.insert(doc);
             }
         }catch (ArrayIndexOutOfBoundsException e){
             e.printStackTrace();
-            System.out.println("越界");
+            System.out.println("OutOfBounds");
             System.exit(0);
         } catch (IOException e) {
-            System.out.println("io失败");
+            System.out.println("IOException");
             e.printStackTrace();
             System.exit(0);
         }
     }
 
     public void saveUserView() {
-        File shop_info = new File("E://dataset/user_view.txt");
+        File shop_info = new File("/home/hadoop/user_view.txt");
         try {
-            List<String> lines = FileUtil.getStringFromFile(shop_info, "utf-8");
+            List<String> lines = FileUtil.getStringFromFile(shop_info, "utf-8",-1);
             DB db = Test.getDB();
             DBCollection coll = db.getCollection("user_view");
             List<String> keys = new ArrayList<String>() ;
             keys.add("user_id") ;
             keys.add("shop_id") ;
-            keys.add("time_stamp") ;
+//            keys.add("time_stamp") ;
             int i = 0 ;
 
             for (String line : lines) {
@@ -127,10 +124,10 @@ public class Test {
             }
         }catch (ArrayIndexOutOfBoundsException e){
             e.printStackTrace();
-            System.out.println("越界");
+            System.out.println("OutOfBounds");
             System.exit(0);
         } catch (IOException e) {
-            System.out.println("IO失败");
+            System.out.println("IOException");
             e.printStackTrace();
             System.exit(0);
         }
