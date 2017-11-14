@@ -73,7 +73,8 @@ public class Users implements Serializable {
                 else
                     values[i++] = 0;
             }
-            FileUtil.writeUser(userId + ":" + Arrays.stream(values).boxed().map(d -> d+"").collect(Collectors.joining(" ")));
+            FileUtil.writeUser(userId + ":" + Arrays.stream(values).boxed()
+                    .map(d -> d+"").collect(Collectors.joining(" ")));
         }
         FileUtil.closeUser();
     }
