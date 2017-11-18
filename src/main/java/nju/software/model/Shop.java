@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Created by SuperSY on 2017/11/8.
  */
 public class Shop implements Serializable{
-    private int id;
+    private String id;
 
     private String city_name ;
 
@@ -26,11 +26,11 @@ public class Shop implements Serializable{
 
     private String cate_3_name ;
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

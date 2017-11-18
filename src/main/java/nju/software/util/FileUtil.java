@@ -15,6 +15,8 @@ public class FileUtil {
     private static String fileClustering = "clusteringResult.txt" ;
     private static PrintWriter clusteringFw ;
 
+    private static String viewTime = "viewTime.csv" ;
+    private static PrintWriter viewTimeFw ;
     /**
      * @param f
      * @param charset
@@ -89,5 +91,21 @@ public class FileUtil {
 
     public static void closeClustering() {
         clusteringFw.close();
+    }
+
+    public static void writeViewTime(String content) {
+        try {
+            if (viewTimeFw == null) {
+                viewTimeFw = new PrintWriter(new FileWriter(new File(viewTime)));
+            }
+            viewTimeFw.println(content);
+            viewTimeFw.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void closeViewTime() {
+        viewTimeFw.close();
     }
 }
