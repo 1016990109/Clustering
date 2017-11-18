@@ -1,14 +1,11 @@
 package nju.software;
 
-import nju.software.model.LabeledUserViewTimes;
 import nju.software.model.Shop;
 import nju.software.model.UserPay;
-import nju.software.util.FileUtil;
 import nju.software.util.TimeStampUtil;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FilterFunction;
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.mllib.classification.LogisticRegressionModel;
 import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS;
