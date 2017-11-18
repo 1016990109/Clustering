@@ -6,7 +6,9 @@ import nju.software.util.TimeStampUtil;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FilterFunction;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.mllib.classification.LogisticRegressionModel;
 import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS;
 import org.apache.spark.mllib.linalg.Vector;
@@ -28,13 +30,16 @@ public class Classify implements Serializable {
     private static String payPath = "/ml/pay/07/*.csv";
     private static String viewPath = "/ml/view/07/*.csv";
     private static String viewTimePath = "/ml/viewTime/";
-    private static String trainDataPath = "ml/train/";
-    private static String modelPath = "./model.txt";
+    private static String trainDataPath = "/ml/train/";
+    private static String modelPath = "./model";
 
     public static void main(String[] args) {
         Classify classify = new Classify();
 //        classify.createUserInfo();
-        classify.getViewTimes();
+//        classify.getViewTimes();
+//        classify.union();
+//        classify.train();
+        classify.test();
     }
 
     public Classify() {
@@ -83,7 +88,7 @@ public class Classify implements Serializable {
             public String call(Row row) throws Exception {
                 return 0 + "," + row.getString(3) + "," + row.getString(4) + "," + 1;
             }
-        }, Encoders.bean(String.class));
+        }, Encoders.STRING());
 
         Dataset<String> viewPay = viewJoinPay.filter((FilterFunction<Row>) row -> {
             String payTime = row.getString(2);
@@ -101,36 +106,63 @@ public class Classify implements Serializable {
                     public String call(Row row) throws Exception {
                         return 1 + "," + row.getString(0) + "," + row.getString(1) + "," + row.getLong(5);
                     }
-                }, Encoders.bean(String.class));
+                }, Encoders.STRING());
 
-        viewNoPay.union(viewPay).write().csv(hdfsIp + viewTimePath);
+        viewNoPay.union(viewPay).write().text(hdfsIp + viewTimePath);
     }
 
     public void union() {
-        Dataset<Row> userInfo = sparkSession.read().option("header", "false").csv(hdfsIp + userInfoPath)
+        Dataset<Row> userInfo = sparkSession.read().option("header", "false").csv(hdfsIp + userInfoPath+"*.csv")
                 .toDF("user_id", "pay_times", "avg");
         Dataset<Row> shopInfo = sparkSession.read().option("header", "false")
                 .csv(hdfsIp + shopPath)
                 .toDF("id", "city_name", "location_id", "per_pay", "score", "comment_cnt", "shop_level", "cate_1_name", "cate_2_name", "cate_3_name")
-                .as(Encoders.bean(Shop.class)).select("id", "location_id", "score", "comment_cnt", "per_pay");
-        Dataset<Row> viewTimes = sparkSession.read().option("header", "false").csv(hdfsIp + viewTimePath)
-                .toDF("lable", "user_id", "shop_id", "view_times");
+                .as(Encoders.bean(Shop.class)).select("id", "location_id", "per_pay", "score", "comment_cnt", "shop_level");
+        Dataset<Row> viewTimes = sparkSession.read().option("header", "false").csv(hdfsIp + viewTimePath+"*.txt")
+                .toDF("label", "user_id", "shop_id", "view_times");
         viewTimes.join(shopInfo, viewTimes.col("shop_id").equalTo(shopInfo.col("id")))
-                .join(userInfo, userInfo.col("user_id").equalTo(viewTimes.col("user_id")));
-        viewTimes.write().csv(hdfsIp + trainDataPath);
+                .join(userInfo, userInfo.col("user_id").equalTo(viewTimes.col("user_id")), "left")
+            .select(viewTimes.col("label"),viewTimes.col("view_times"),
+                shopInfo.col("location_id"), shopInfo.col("per_pay"), shopInfo.col("score"), shopInfo.col("comment_cnt"), shopInfo.col("shop_level"),
+                userInfo.col("pay_times"), userInfo.col("avg")).na().fill("0")
+            .write().csv(hdfsIp + trainDataPath);
     }
 
     public void train() {
         JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
 
         JavaRDD<LabeledPoint> lBdata = sc.textFile(hdfsIp + trainDataPath).map(s -> {
-            s.replaceFirst(",", ":");
+            s = s.replaceFirst(",", ":");
             String[] line = s.split(":");
-            Vector dense = Vectors.dense(Arrays.stream(s.split(",")).mapToDouble(Double::parseDouble).toArray());
+            Vector dense = Vectors.dense(Arrays.stream(line[1].split(",")).mapToDouble(Double::parseDouble).toArray());
             return new LabeledPoint(Double.parseDouble(line[0]), dense);
         });
         LogisticRegressionModel model = new LogisticRegressionWithLBFGS().setNumClasses(2).run(lBdata.rdd());
         model.save(sparkSession.sparkContext(), modelPath);
+    }
 
+    public void test() {
+        JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
+        double[] splitArray = {0.9, 0.1};
+        JavaRDD<LabeledPoint>[] lBdata = sc.textFile(hdfsIp + trainDataPath).map(s -> {
+            s = s.replaceFirst(",", ":");
+            String[] line = s.split(":");
+            Vector dense = Vectors.dense(Arrays.stream(line[1].split(",")).mapToDouble(Double::parseDouble).toArray());
+            return new LabeledPoint(Double.parseDouble(line[0]), dense);
+        }).randomSplit(splitArray);
+        JavaRDD<Vector> map = lBdata[1].map(new Function<LabeledPoint, Vector>() {
+            @Override
+            public Vector call(LabeledPoint labeledPoint) throws Exception {
+                return labeledPoint.features();
+            }
+        });
+        LogisticRegressionModel model = LogisticRegressionModel.load(sparkSession.sparkContext(), modelPath);
+        JavaRDD<Double> predict = model.predict(map);
+        predict.foreach(new VoidFunction<Double>() {
+            @Override
+            public void call(Double aDouble) throws Exception {
+                System.out.println(aDouble);
+            }
+        });
     }
 }
