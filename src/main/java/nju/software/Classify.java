@@ -24,9 +24,9 @@ public class Classify implements Serializable {
     private static SparkSession sparkSession;
     private static String hdfsIp = "hdfs://192.168.1.211:9000";
     private static String shopPath = "/shop/*.csv" ;
-    private static String payTimesPath = "/ml/pay/*.csv" ;
+    private static String payTimesPath = "/ml/pay/06/*.csv" ;
     private static String userInfoPath = "/userInfo/" ;
-    private static String payPath = "/ml/pay/part-00001-4b04f654-7ff4-4812-8d53-5bf0c5db3ab3-c000.csv";
+    private static String payPath = "/ml/pay/07/*.csv";
     private static String viewPath = "/ml/view/part-00000-1e45f0db-29a2-45b1-a234-8fecd1f0c7a9-c000.csv";
     private static String viewTimePath = "" ;
     private static String trainDataPath = "" ;
@@ -34,7 +34,7 @@ public class Classify implements Serializable {
 
     public static void main(String[] args) {
         Classify classify = new Classify();
-//        classify.createUserInfo();
+        classify.createUserInfo();
 //        classify.getViewTimes();
     }
 
@@ -45,7 +45,7 @@ public class Classify implements Serializable {
 
     public void createUserInfo() {
         Dataset<UserPay> userPay = sparkSession.read().option("header", "false")
-                .csv(hdfsIp + payTimesPath).toDF("shop_id", "user_id", "time_stamp").as(Encoders.bean(UserPay.class));
+                .csv(hdfsIp + payTimesPath).toDF("user_id", "shop_id", "time_stamp").as(Encoders.bean(UserPay.class));
         Dataset<Shop> shopInfo = sparkSession.read().option("header", "false")
                 .csv(hdfsIp + shopPath)
                 .toDF("id", "city_name", "location_id", "per_pay", "score", "comment_cnt", "shop_level", "cate_1_name", "cate_2_name", "cate_3_name")
