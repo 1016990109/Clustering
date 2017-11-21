@@ -8,9 +8,9 @@ import java.io.Serializable;
 public class Shop implements Serializable{
     private String id;
 
-    private String city_name ;
+    private String city_number ;
 
-    private int  location_id ;
+    private int  location_number ;
 
     private double  per_pay	;
 
@@ -34,20 +34,20 @@ public class Shop implements Serializable{
         this.id = id;
     }
 
-    public String getCity_name() {
-        return city_name;
+    public String getCity_number() {
+        return city_number;
     }
 
-    public void setCity_name(String city_name) {
-        this.city_name = city_name;
+    public void setCity_number(String city_number) {
+        this.city_number = city_number;
     }
 
-    public int getLocation_id() {
-        return location_id;
+    public int getLocation_number() {
+        return location_number;
     }
 
-    public void setLocation_id(int location_id) {
-        this.location_id = location_id;
+    public void setLocation_number(int location_number) {
+        this.location_number = location_number;
     }
 
     public double getPer_pay() {
